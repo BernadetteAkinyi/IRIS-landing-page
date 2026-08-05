@@ -57,6 +57,25 @@ header{
 
 }
 
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 60px;
+    padding: 60px 40px;
+}
 
+.hero-content {
+    max-width: 520px;
+}
 
+.hero-image {
+    width: 500px;
+    margin-left: auto;
+}
+
+.hero-image img {
+    width: 100%;
+    display: block;
+}
 
