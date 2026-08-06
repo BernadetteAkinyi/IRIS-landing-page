@@ -172,3 +172,55 @@ footer a {
     }
 }
 
+.features {
+    padding:80px 8%;
+    background:#FFF8F3;
+}
+
+.feat-label {
+    color:#6C63FF;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:1px;
+}
+
+.feature-container {
+    display:flex;
+    align-items: flex-start;
+    gap: 40px;
+}
+
+.feature-list {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.feature-btn {
+    background: #FFFFFF;
+    border:none;
+    border-radius: 16px;
+    padding: 18px 24px;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #4A2E2A;
+    cursor:pointer;
+    transition: all 0.3s ease;
+}
+
+.feature-btn:hover {
+    background: #F77E6B;
+    color:white;
+}
+
+.feature-preview{
+    
+    flex : 2;
+    background: white;
+    border-radius: 24px;
+    min-height:450px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
