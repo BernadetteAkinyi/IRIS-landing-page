@@ -1,12 +1,31 @@
 <!doctype html>
 <html>
   <head>
-    <title>Features</title>
+    <title>IRIS Features</title>
     <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
+    <header>
+      <nav class="nav">
+        <div class="logo-container">
+          <img class="logo" src="assets/icons/IRISLOGO.png" alt="IRIS logo" />
+          <h1>IRIS</h1>
+        </div>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="index.html#about">About</a>
+          <a href="index.html#contact">Contact</a>
+          <a href="login.html" class="btn">Get Started</a>
+        </div>
+      </nav>
+    </header>
+
     <section class="features">
-      <span class="feat-label">Features</span>
+      <span class="section-label">Features</span>
       <h1>Experience Iris, your way</h1>
       <p>
         Try the accessibility features below and see how Iris adapts to your
@@ -14,19 +33,33 @@
       </p>
       <div class="feature-container">
         <div class="feature-list">
-          <button class="feature-btn">High Contrast</button>
-          <button class="feature-btn">Reading Mode</button>
-          <button class="feature-btn">Text-to-Speech</button>
-          <button class="feature-btn">Reduce Motion</button>
+          <button id="high-contrast-btn" class="feature-btn">
+            High Contrast
+          </button>
+          <button id="reading-mode-btn" class="feature-btn">
+            Reading Mode
+          </button>
+          <button id="text-to-speech-btn" class="feature-btn">
+            Text-to-Speech
+          </button>
+          <button id="reduce-motion-btn" class="feature-btn">
+            Reduce Motion
+          </button>
         </div>
-        <div class="feature-preview">
-          <h2>Welcome to IRIS</h2>
-          <p>
-            IRIS personalizes your experience by adapting content, appearance,
-            and accessibility settings to match your needs.
+        <div id="preview" class="feature-preview">
+          <span class="preview-label">Preview</span>
+          <h3 id="previewTitle">Welcome to IRIS</h3>
+          <p id="previewText">
+            Technology that adapts to you, making every digital experience more
+            comfortable and accessible.
+          </p>
+          <a href="login.html" class="btn">Get Started</a>
+          <p id="previewNote" class="preview-note">
+            Select a feature to see how Iris adapts the interface.
           </p>
         </div>
       </div>
     </section>
+    <script src="script.js"></script>
   </body>
 </html>

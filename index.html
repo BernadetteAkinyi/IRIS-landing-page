@@ -1,42 +1,119 @@
 <!doctype html>
 <html>
   <head>
-    <title>Home</title>
+    <title>IRIS</title>
     <link rel="stylesheet" href="style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <header>
       <nav class="nav">
         <div class="logo-container">
-          <img class="logo" src="assets/icons/IRISLOGO.png" />
+          <img class="logo" src="assets/icons/IRISLOGO.png" alt="IRIS logo" />
           <h1>IRIS</h1>
         </div>
 
         <div class="nav-links">
-          <a href="#">About</a>
-          <a href="#">Features</a>
-          <a href="#">Contact</a>
-          <button class="btn">Get Started</button>
+          <a href="#about">About</a>
+          <a href="features.html">Features</a>
+          <a href="#contact">Contact</a>
+          <a href="login.html" class="btn">Get Started</a>
         </div>
       </nav>
     </header>
-    <section class="hero">
-      <div class="hero-content">
-        <h1>Your World, Your Way</h1>
-        <p>
-          IRIS is an adaptive accessibillity companion designed for people with
-          invisible disabilities. It helps you create a digital space that
-          understand your needs, connects you with supportive communities, and
-          makes resorces easier to access-your way.
-        </p>
-      </div>
 
-      <div class="hero-image">
-        <img src="assets/images/animation.svg" alt="Community image" />
-      </div>
-    </section>
+    <main>
+      <section class="hero">
+        <div class="hero-content">
+          <span class="section-label">Adaptive accessibility companion</span>
+          <h1>Your world, your way</h1>
+          <p>
+            IRIS makes digital spaces more welcoming by adapting layout,
+            contrast, and interaction to how each person prefers to work and
+            explore.
+          </p>
+          <div class="hero-actions">
+            <a href="login.html" class="btn">Get Started</a>
+            <a class="secondary-btn" href="#about">Learn More</a>
+          </div>
+        </div>
+
+        <div class="hero-image">
+          <img src="assets/images/animation.svg" alt="Community image" />
+        </div>
+      </section>
+
+      <section id="about" class="about">
+        <div class="about-header">
+          <span class="section-label">About Iris</span>
+          <h2>Designed to adapt, not to assume</h2>
+          <p>
+            Iris helps people with invisible disabilities feel seen by making
+            interfaces clearer, calmer, and easier to use.
+          </p>
+        </div>
+        <div class="about-grid">
+          <div class="about-card">
+            <h3>Personal comfort</h3>
+            <p>
+              Gentle spacing, soft palettes, and clear focus states create a
+              more comfortable digital environment.
+            </p>
+          </div>
+          <div class="about-card">
+            <h3>Everyday clarity</h3>
+            <p>
+              Simple visual cues and thoughtful layout make information easier
+              to scan and understand.
+            </p>
+          </div>
+          <div class="about-card">
+            <h3>More control</h3>
+            <p>
+              Iris is a concept for letting users choose how their experience
+              should look and feel.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" class="contact">
+        <div class="contact-card">
+          <div>
+            <span class="section-label">Contact</span>
+            <h2>Let's make accessibility feel effortless</h2>
+            <p>
+              Share your questions or vision for a more inclusive digital
+              experience and we’ll follow up with thoughtful ideas.
+            </p>
+          </div>
+          <form class="contact-form">
+            <label>
+              Name
+              <input type="text" placeholder="Your name" />
+            </label>
+            <label>
+              Email
+              <input type="email" placeholder="you@example.com" />
+            </label>
+            <label>
+              Message
+              <textarea
+                rows="4"
+                placeholder="Tell us what matters most"
+              ></textarea>
+            </label>
+            <button type="button" class="btn">Send Message</button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a href="https://storyset.com/people">People illustrations by Storyset</a>
+    </footer>
   </body>
-  <footer>
-    <a href="https://storyset.com/people">People illustrations by Storyset</a>
-  </footer>
 </html>
