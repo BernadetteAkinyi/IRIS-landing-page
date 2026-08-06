@@ -323,32 +323,35 @@ main {
 }
 
 .login-section {
-    padding: 80px 40px;
+    padding: 60px 24px;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: calc(100vh - 160px);
+    background: radial-gradient(circle at top left, rgba(247, 126, 107, 0.08), transparent 36%),
+      radial-gradient(circle at bottom right, rgba(111, 90, 84, 0.08), transparent 30%);
 }
 
 .login-card {
     background: #FFFFFF;
-    border-radius: 32px;
-    padding: 40px;
-    box-shadow: 0 20px 40px rgba(111, 90, 84, 0.08);
+    border-radius: 36px;
+    padding: 44px;
+    box-shadow: 0 28px 60px rgba(111, 90, 84, 0.08);
     max-width: 520px;
     width: 100%;
+    border: 1px solid rgba(247, 126, 107, 0.12);
 }
 
 .login-card h1 {
     margin-top: 0;
     margin-bottom: 16px;
-    font-size: 2.6rem;
+    font-size: clamp(2.4rem, 3vw, 3rem);
 }
 
-.login-card p {
-    margin: 0 0 24px;
+.login-intro {
+    margin: 0 0 28px;
     color: #6F5A54;
-    line-height: 1.8;
+    line-height: 1.85;
 }
 
 .login-form {
@@ -356,8 +359,89 @@ main {
     gap: 18px;
 }
 
+.login-form label {
+    display: grid;
+    gap: 10px;
+    font-weight: 700;
+    color: #4A2E2A;
+}
+
+.login-form input {
+    width: 100%;
+    border: 1px solid #E7D6CF;
+    border-radius: 18px;
+    padding: 16px 18px;
+    background: #FCF5F1;
+    color: #4A2E2A;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-form input:focus {
+    border-color: #F77E6B;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(247, 126, 107, 0.16);
+}
+
+.login-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.remember-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #6F5A54;
+    font-weight: 500;
+}
+
+.remember-row input {
+    width: auto;
+    accent-color: #F77E6B;
+}
+
+.secondary-link {
+    color: #6F5A54;
+    font-size: 0.95rem;
+}
+
+.secondary-link:hover {
+    color: #F77E6B;
+}
+
+.login-message {
+    display: none;
+    padding: 16px 20px;
+    border-radius: 18px;
+    background: #FFF4EE;
+    border: 1px solid #F4D1C5;
+    color: #6F4F45;
+    font-size: 0.95rem;
+}
+
+.login-message.success {
+    background: #ECF8F3;
+    border-color: #C0E5D8;
+    color: #2A5F46;
+}
+
+.login-message.error {
+    background: #FDEEEE;
+    border-color: #F6C2BB;
+    color: #8B2B2A;
+}
+
+.login-form .btn {
+    width: 100%;
+}
+
 .login-footer {
-    margin-top: 20px;
+    margin-top: 18px;
     text-align: center;
     color: #6F5A54;
 }

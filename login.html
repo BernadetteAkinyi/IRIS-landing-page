@@ -9,25 +9,62 @@
     />
   </head>
   <body>
+    <header>
+      <nav class="nav">
+        <div class="logo-container">
+          <img class="logo" src="assets/icons/IRISLOGO.png" alt="IRIS logo" />
+          <h1>IRIS</h1>
+        </div>
+        <div class="nav-links">
+          <a href="index.html">Home</a>
+          <a href="features.html">Features</a>
+          <a href="index.html#about">About</a>
+          <a href="index.html#contact" class="btn">Contact</a>
+        </div>
+      </nav>
+    </header>
+
     <section class="login-section">
       <div class="login-card">
         <span class="section-label">Welcome back</span>
         <h1>Sign in to IRIS</h1>
-        <p>
-          Log in to continue exploring accessibility features and personalize
-          your experience.
+        <p class="login-intro">
+          Access your account, continue exploring accessibility tools, and
+          personalize your IRIS experience.
         </p>
-        <form class="login-form">
+
+        <div id="loginMessage" class="login-message" aria-live="polite"></div>
+
+        <form id="loginForm" class="login-form">
           <label>
             Email
-            <input type="email" placeholder="you@example.com" />
+            <input
+              id="loginEmail"
+              type="email"
+              placeholder="you@example.com"
+              required
+            />
           </label>
           <label>
             Password
-            <input type="password" placeholder="Enter your password" />
+            <input
+              id="loginPassword"
+              type="password"
+              placeholder="Enter your password"
+              required
+              minlength="6"
+            />
           </label>
-          <button type="button" class="btn">Login</button>
+          <div class="login-meta">
+            <label class="remember-row">
+              <input type="checkbox" id="rememberMe" />
+              Remember me
+            </label>
+            <a href="#" class="secondary-link">Forgot password?</a>
+          </div>
+          <button type="submit" class="btn">Login</button>
         </form>
+
         <p class="login-footer">
           New to IRIS? <a href="index.html">Go back home</a>
         </p>
