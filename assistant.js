@@ -14,5 +14,16 @@ class ButlerVoice {
 
     this.synth = window.speechSynthesis;
 
+    //Fires when the browser has a final transcript
+    this.recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      this.onHeard(transcript);
+    };
+
+    this.recognition.onerror = (e) => console.error("Recognition error:", e.error);
   }
-}
+  startListening() {
+    this.recognition?.start();
+  }
+
+  }
