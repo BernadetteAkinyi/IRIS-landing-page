@@ -31,4 +31,16 @@ class ButlerVoice {
     this.speak(`You said: ${transcript}`);
   }
 
+   speak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-GB";   
+    utterance.rate = 0.95;      // slightly slower = more composed
+    utterance.pitch = 0.9;      // slightly lower = more formal
+    this.synth.speak(utterance);
   }
+}
+
+const butler = new ButlerVoice();
+document.getElementById("butler-btn").addEventListener("click", () => {
+  butler.startListening();
+});
