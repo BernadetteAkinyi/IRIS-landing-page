@@ -26,4 +26,9 @@ class ButlerVoice {
     this.recognition?.start();
   }
 
+    onHeard(transcript) {
+    console.log("Heard:", transcript);
+    this.speak(`You said: ${transcript}`);
+  }
+
   }
