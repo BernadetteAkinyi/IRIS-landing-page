@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"encoding/json"
 )
 
 // Request body sent from the browser
@@ -17,6 +18,7 @@ type AssistantResponse struct {
 }
 
 func main() {
+	http.HandleFunc("/api/assistant", assistantHandler)
 	log.Println("Butler backend running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -35,3 +37,20 @@ func respond(transcript string) string {
 	}
 }
 
+func assistantHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Method == http.MethodOptions {
+		return 
+	}
+
+	var req AssistantRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	reply := respond(req.Transcript)
+	json.NewEncoder(w).Encode(AssistantResponse{Reply: reply})
+}
