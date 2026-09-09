@@ -26,10 +26,20 @@ class ButlerVoice {
     this.recognition?.start();
   }
 
-    onHeard(transcript) {
-    console.log("Heard:", transcript);
-    this.speak(`You said: ${transcript}`);
+   async onHeard(transcript) {
+  try {
+    const res = await fetch("http://localhost:8080/api/assistant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ transcript }),
+    });
+    const data = await res.json();
+    this.speak(data.reply);
+  } catch (err) {
+    console.error("Assistant backend error:", err);
+    this.speak("My apologies, I seem to have lost my train of thought.");
   }
+}
 
    speak(text) {
     const utterance = new SpeechSynthesisUtterance(text);
