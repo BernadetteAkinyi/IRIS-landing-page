@@ -70,7 +70,10 @@ if (preview) {
   });
 
   window.addEventListener("DOMContentLoaded", function () {
-    highContrastBtn.click();
+    const saved = localStorage.getItem("iris_preferences");
+    if (!saved) {
+      highContrastBtn.click();
+    }
   });
 }
 
