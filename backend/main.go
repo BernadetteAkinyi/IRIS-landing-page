@@ -3,54 +3,47 @@ package main
 import (
 	"log"
 	"net/http"
-	"strings"
-	"encoding/json"
+	"os"
+
+	"backend/assistant"
+	"backend/handlers"
+	"backend/store"
 )
 
-// Request body sent from the browser
-type AssistantRequest struct {
-	Transcript string `json:"transcript"`
-}
-
-// Response sent back to the browser
-type AssistantResponse struct {
-	Reply string `json:"reply"`
-}
-
 func main() {
-	http.HandleFunc("/api/assistant", assistantHandler)
-	log.Println("Butler backend running on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
+	// Initialize store and assistant engine
+	dataStore := store.New()
+	assistantEngine := assistant.NewEngine(dataStore)
+	api := handlers.NewAPI(dataStore, assistantEngine)
 
-func respond(transcript string) string {
-	t := strings.ToLower(transcript)
-	switch {
-	case strings.Contains(t, "hello") || strings.Contains(t, "hi"):
-		return "Good day to you. How may I be of service?"
-	case strings.Contains(t, "time"):
-		return "I'm afraid I don't yet have a clock at hand, but I shall acquire one shortly."
-	case strings.Contains(t, "thank"):
-		return "It is entirely my pleasure."
-	default:
-		return "I heard you say: \"" + transcript + "\". I'm still learning how best to assist with that."
+	mux := http.NewServeMux()
+
+	// Assistant route
+	mux.HandleFunc("/api/assistant", api.AssistantHandler)
+
+	// Accessibility preferences routes
+	mux.HandleFunc("/api/preferences", api.PreferencesHandler)
+
+	// User management routes
+	mux.HandleFunc("/api/users/login", api.LoginHandler)
+	mux.HandleFunc("/api/users/register", api.RegisterHandler)
+
+	// Services & Events routes
+	mux.HandleFunc("/api/services", api.ServicesHandler)
+	mux.HandleFunc("/api/events", api.EventsHandler)
+
+	// Health check route
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		handlers.EnableCORS(w)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"ok","service":"iris-butler-backend"}`))
+	})
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
 	}
-}
 
-func assistantHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method == http.MethodOptions {
-		return 
-	}
-
-	var req AssistantRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	reply := respond(req.Transcript)
-	json.NewEncoder(w).Encode(AssistantResponse{Reply: reply})
+	log.Printf("IRIS Butler backend server running on http://localhost:%s\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, mux))
 }
