@@ -1,7 +1,3 @@
-/**
- * IRIS Butler - Adaptive Voice & Accessibility Companion
- * Connects speech recognition and accessible controls to the Go backend.
- */
 class ButlerVoice {
   constructor() {
     this.synth = window.speechSynthesis;
@@ -9,7 +5,7 @@ class ButlerVoice {
     this.backendUrl = "http://localhost:8080/api/assistant";
 
     this.initSpeechRecognition();
-    this.createFloatingUI();
+    this.createUI();
     this.bindEvents();
     this.loadSavedPreferences();
   }
@@ -19,7 +15,6 @@ class ButlerVoice {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.warn("Speech recognition is not supported in this browser. Butler will operate via text input.");
       this.hasSpeech = false;
       return;
     }
@@ -39,9 +34,7 @@ class ButlerVoice {
     this.recognition.onend = () => {
       this.isListening = false;
       this.setButtonsListening(false);
-      if (this.currentStatus === "listening") {
-        this.updateStatus("ready", "Ready");
-      }
+      this.updateStatus("ready", "Ready");
     };
 
     this.recognition.onresult = (event) => {
@@ -50,21 +43,18 @@ class ButlerVoice {
       this.handleCommand(transcript);
     };
 
-    this.recognition.onerror = (e) => {
-      console.warn("Speech recognition notice:", e.error);
+    this.recognition.onerror = () => {
       this.isListening = false;
       this.setButtonsListening(false);
       this.updateStatus("ready", "Ready");
-      if (e.error === "not-allowed") {
-        this.addMessage("Microphone permission was denied. You may type commands to me below.", "assistant");
-      }
     };
   }
 
   startListening() {
     if (!this.hasSpeech) {
       this.openPanel();
-      this.focusInput();
+      const input = document.getElementById("butler-text-input");
+      if (input) input.focus();
       return;
     }
 
@@ -75,409 +65,153 @@ class ButlerVoice {
         this.openPanel();
         this.recognition.start();
       }
-    } catch (err) {
-      console.error("Failed to start speech recognition:", err);
+    } catch {
       this.openPanel();
-      this.focusInput();
     }
   }
 
   async handleCommand(transcript) {
     this.updateStatus("processing", "Thinking...");
 
-    const currentPrefs = this.getCurrentPreferences();
-    const storedUser = localStorage.getItem("irisRememberMe") || "user_dyslexia";
-
     try {
       const res = await fetch(this.backendUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          transcript: transcript,
-          user_id: storedUser,
-          current_preferences: currentPrefs,
-        }),
+        body: JSON.stringify({ transcript }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Server returned ${res.status}`);
-      }
+      if (!res.ok) throw new Error("Network response error");
 
       const data = await res.json();
-
       this.addMessage(data.reply, "assistant");
-      this.updateStatus("speaking", "Speaking...");
 
-      // Execute returned accessibility actions
-      if (data.actions && data.actions.length > 0) {
-        data.actions.forEach((action) => this.executeAction(action));
+      if (data.action) {
+        this.executeAction(data.action);
       }
 
-      this.speak(data.reply, () => {
-        this.updateStatus("ready", "Ready");
-      });
-    } catch (err) {
-      console.error("Butler assistant backend error:", err);
-      const fallbackMsg = "My apologies, I had trouble reaching the IRIS service. Please ensure the backend server is running.";
-      this.addMessage(fallbackMsg, "assistant");
-      this.speak(fallbackMsg, () => {
-        this.updateStatus("ready", "Ready");
-      });
+      this.speak(data.reply);
+    } catch {
+      const msg = "Unable to connect to IRIS backend. Please make sure the server is running on :8080.";
+      this.addMessage(msg, "assistant");
+      this.speak(msg);
     }
   }
 
   executeAction(action) {
-    if (!action || !action.type) return;
+    const preview = document.getElementById("preview");
 
     switch (action.type) {
-      case "SET_COLOR_THEME":
-        this.applyColorTheme(action.payload.theme);
+      case "SET_THEME":
+        if (action.payload === "baby-pink") {
+          document.body.classList.toggle("baby-pink");
+          if (preview) preview.classList.toggle("baby-pink");
+        }
         break;
 
       case "SET_READING_MODE":
-        this.applyReadingMode(action.payload.enabled, action.payload.font, action.payload.line_spacing);
+        document.body.classList.toggle("reading-mode");
+        if (preview) preview.classList.toggle("reading-mode");
         break;
 
       case "SET_TEXT_SIZE":
-        this.applyTextSize(action.payload.size);
-        break;
-
-      case "SET_HIGH_CONTRAST":
-        this.applyHighContrast(action.payload.enabled);
-        break;
-
-      case "SET_SIMPLIFIED_LAYOUT":
-        this.applySimplifiedLayout(action.payload.enabled);
-        break;
-
-      case "SET_REDUCE_MOTION":
-        this.applyReduceMotion(action.payload.enabled);
-        break;
-
-      case "SET_TTS":
-        if (action.payload.action === "stop") {
-          if (this.synth) this.synth.cancel();
-        } else if (action.payload.action === "read") {
-          this.readCurrentContent();
+        document.body.classList.remove("text-size-small", "text-size-large");
+        if (action.payload === "large") {
+          document.body.classList.add("text-size-large");
+        } else if (action.payload === "small") {
+          document.body.classList.add("text-size-small");
         }
         break;
 
-      case "APPLY_USER_PREFERENCES":
-        this.applyAllPreferences(action.payload.preferences);
+      case "HIGH_CONTRAST":
+        document.body.classList.toggle("high-contrast");
+        if (preview) preview.classList.toggle("high-contrast");
         break;
 
-      case "RESET_INTERFACE":
-        this.resetAll();
+      case "SIMPLIFY":
+        document.body.classList.toggle("simplified-layout");
         break;
 
-      case "NAVIGATE":
-        if (action.payload && action.payload.page) {
-          setTimeout(() => {
-            window.location.href = action.payload.page;
-          }, 1200);
+      case "REDUCE_MOTION":
+        document.body.classList.toggle("reduce-motion");
+        if (preview) preview.classList.toggle("reduce-motion");
+        break;
+
+      case "READ_PAGE":
+        this.readPageContent();
+        break;
+
+      case "RESET":
+        document.body.classList.remove(
+          "baby-pink",
+          "high-contrast",
+          "reading-mode",
+          "reduce-motion",
+          "simplified-layout",
+          "text-size-small",
+          "text-size-large"
+        );
+        if (preview) {
+          preview.classList.remove("baby-pink", "high-contrast", "reading-mode", "reduce-motion");
         }
+        localStorage.removeItem("iris_theme");
         break;
-
-      default:
-        console.log("Unhandled Butler action:", action);
     }
   }
 
-  applyColorTheme(theme) {
-    const preview = document.getElementById("preview");
-    const themeClasses = [
-      "theme-baby-pink",
-      "theme-lavender",
-      "theme-mint-green",
-      "theme-peach",
-      "theme-sky-blue",
-      "baby-pink",
-      "lavender",
-      "mint-green",
-      "peach",
-      "sky-blue",
-    ];
-
-    document.body.classList.remove(...themeClasses);
-    if (preview) {
-      preview.classList.remove(...themeClasses);
-    }
-
-    if (theme && theme !== "default" && theme !== "high-contrast") {
-      const cls = `theme-${theme}`;
-      document.body.classList.add(cls);
-      if (preview) {
-        preview.classList.add(cls);
-        this.updatePreviewText("Color Theme Applied", `IRIS interface adjusted to ${theme.replace("-", " ")} palette.`);
-      }
-    } else if (theme === "default") {
-      if (preview) {
-        this.updatePreviewText("Default Theme", "Restored standard warm palette.");
-      }
-    }
-
-    this.savePreference("color_theme", theme);
-  }
-
-  applyReadingMode(enabled, font = "Lexend", lineSpacing = "relaxed") {
-    const preview = document.getElementById("preview");
-
-    if (enabled) {
-      document.body.classList.add("reading-mode");
-      if (preview) {
-        preview.classList.add("reading-mode");
-        this.updatePreviewText(
-          "Focus Reading Mode",
-          `Clear typography (${font}) and ${lineSpacing} spacing applied to ease visual stress and support reading.`
-        );
-        this.highlightButton("reading-mode-btn");
-      }
-    } else {
-      document.body.classList.remove("reading-mode");
-      if (preview) {
-        preview.classList.remove("reading-mode");
-      }
-    }
-
-    this.savePreference("reading_mode", enabled);
-  }
-
-  applyTextSize(size) {
-    const sizeClasses = ["text-size-small", "text-size-medium", "text-size-large", "text-size-x-large"];
-    document.body.classList.remove(...sizeClasses);
-
-    if (size && size !== "medium") {
-      document.body.classList.add(`text-size-${size}`);
-    }
-
-    const preview = document.getElementById("preview");
-    if (preview) {
-      this.updatePreviewText("Text Size Adjusted", `Font size scaled to ${size} for optimal comfort.`);
-    }
-
-    this.savePreference("text_size", size);
-  }
-
-  applyHighContrast(enabled) {
-    const preview = document.getElementById("preview");
-
-    if (enabled) {
-      document.body.classList.add("high-contrast");
-      if (preview) {
-        preview.classList.add("high-contrast");
-        this.updatePreviewText(
-          "High Contrast Enabled",
-          "Dark palette with high contrast borders and text activated for visual definition."
-        );
-        this.highlightButton("high-contrast-btn");
-      }
-    } else {
-      document.body.classList.remove("high-contrast");
-      if (preview) {
-        preview.classList.remove("high-contrast");
-      }
-    }
-
-    this.savePreference("high_contrast", enabled);
-  }
-
-  applySimplifiedLayout(enabled) {
-    if (enabled) {
-      document.body.classList.add("simplified-layout");
-    } else {
-      document.body.classList.remove("simplified-layout");
-    }
-
-    const preview = document.getElementById("preview");
-    if (preview) {
-      this.updatePreviewText(
-        enabled ? "Simplified View" : "Full Layout Restored",
-        enabled
-          ? "Unnecessary clutter and decorative elements minimized to maintain focus."
-          : "Standard comprehensive layout displayed."
-      );
-    }
-
-    this.savePreference("simplified_layout", enabled);
-  }
-
-  applyReduceMotion(enabled) {
-    const preview = document.getElementById("preview");
-
-    if (enabled) {
-      document.body.classList.add("reduce-motion");
-      if (preview) {
-        preview.classList.add("reduce-motion");
-        this.updatePreviewText(
-          "Reduce Motion Enabled",
-          "Animations and transitions are paused to reduce visual fatigue."
-        );
-        this.highlightButton("reduce-motion-btn");
-      }
-    } else {
-      document.body.classList.remove("reduce-motion");
-      if (preview) {
-        preview.classList.remove("reduce-motion");
-      }
-    }
-
-    this.savePreference("reduce_motion", enabled);
-  }
-
-  applyAllPreferences(prefs) {
-    if (!prefs) return;
-    if (prefs.color_theme) this.applyColorTheme(prefs.color_theme);
-    if (prefs.reading_mode !== undefined) this.applyReadingMode(prefs.reading_mode, prefs.reading_font, prefs.line_spacing);
-    if (prefs.text_size) this.applyTextSize(prefs.text_size);
-    if (prefs.high_contrast !== undefined) this.applyHighContrast(prefs.high_contrast);
-    if (prefs.simplified_layout !== undefined) this.applySimplifiedLayout(prefs.simplified_layout);
-    if (prefs.reduce_motion !== undefined) this.applyReduceMotion(prefs.reduce_motion);
-  }
-
-  resetAll() {
-    const themeClasses = [
-      "theme-baby-pink",
-      "theme-lavender",
-      "theme-mint-green",
-      "theme-peach",
-      "theme-sky-blue",
-      "high-contrast",
-      "reading-mode",
-      "reduce-motion",
-      "simplified-layout",
-      "text-size-small",
-      "text-size-medium",
-      "text-size-large",
-      "text-size-x-large",
-    ];
-
-    document.body.classList.remove(...themeClasses);
-    const preview = document.getElementById("preview");
-    if (preview) {
-      preview.classList.remove(...themeClasses);
-      this.updatePreviewText("Welcome to IRIS", "Technology that adapts to you, making every digital experience more comfortable.");
-    }
-
-    localStorage.removeItem("iris_preferences");
-  }
-
-  readCurrentContent() {
+  readPageContent() {
     const preview = document.getElementById("previewText");
-    const textToRead = preview
+    const text = preview
       ? preview.textContent
-      : document.querySelector("main p")?.textContent || "Welcome to IRIS, your adaptive accessibility companion.";
-
-    this.speak(textToRead);
+      : document.querySelector("main p")?.textContent || "Welcome to IRIS.";
+    this.speak(text);
   }
 
-  speak(text, onEnd) {
-    if (!this.synth) {
-      if (onEnd) onEnd();
-      return;
-    }
+  speak(text) {
+    if (!this.synth) return;
+    this.synth.cancel();
 
-    this.synth.cancel(); // cancel any active speech
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "en-GB";
     utterance.rate = 0.95;
-    utterance.pitch = 0.92;
 
-    // Pick British voice if available
     const voices = this.synth.getVoices();
-    const britishVoice = voices.find(
-      (v) => v.lang.includes("en-GB") || v.name.includes("UK") || v.name.includes("George") || v.name.includes("Oliver")
-    );
-    if (britishVoice) {
-      utterance.voice = britishVoice;
-    }
-
-    utterance.onend = () => {
-      if (onEnd) onEnd();
-    };
-
-    utterance.onerror = () => {
-      if (onEnd) onEnd();
-    };
+    const gbVoice = voices.find((v) => v.lang.includes("en-GB"));
+    if (gbVoice) utterance.voice = gbVoice;
 
     this.synth.speak(utterance);
   }
 
-  updatePreviewText(title, text) {
-    const t = document.getElementById("previewTitle");
-    const p = document.getElementById("previewText");
-    if (t) t.textContent = title;
-    if (p) p.textContent = text;
-  }
-
-  highlightButton(id) {
-    document.querySelectorAll(".feature-btn").forEach((btn) => btn.classList.remove("active"));
-    const target = document.getElementById(id);
-    if (target) target.classList.add("active");
-  }
-
-  savePreference(key, value) {
-    try {
-      const cur = JSON.parse(localStorage.getItem("iris_preferences") || "{}");
-      cur[key] = value;
-      localStorage.setItem("iris_preferences", JSON.stringify(cur));
-    } catch (e) {
-      console.warn("Storage error:", e);
-    }
-  }
-
-  getCurrentPreferences() {
-    try {
-      return JSON.parse(localStorage.getItem("iris_preferences") || "{}");
-    } catch {
-      return {};
-    }
-  }
-
-  loadSavedPreferences() {
-    const prefs = this.getCurrentPreferences();
-    if (Object.keys(prefs).length > 0) {
-      this.applyAllPreferences(prefs);
-    }
-  }
-
-  // ==========================================
-  // Butler Accessible UI & Floating Widget
-  // ==========================================
-  createFloatingUI() {
+  createUI() {
     if (document.getElementById("butler-floating-widget")) return;
 
     const widget = document.createElement("div");
     widget.id = "butler-floating-widget";
     widget.className = "butler-floating-widget";
     widget.innerHTML = `
-      <div id="butler-panel" class="butler-panel" role="dialog" aria-labelledby="butler-title">
+      <div id="butler-panel" class="butler-panel" role="dialog" aria-label="IRIS Butler Dialog">
         <div class="butler-panel-header">
           <div class="butler-panel-title">
             <span>🎙️</span>
-            <span id="butler-title">IRIS Butler</span>
+            <span>IRIS Butler</span>
             <span id="butler-status" class="butler-status-badge">Ready</span>
           </div>
-          <button id="butler-close-btn" class="butler-close-btn" aria-label="Close Butler panel">&times;</button>
+          <button id="butler-close-btn" class="butler-close-btn" type="button" aria-label="Close assistant">✕ Close</button>
         </div>
 
-        <div id="butler-dialog-box" class="butler-dialog-box" aria-live="polite">
+        <div id="butler-dialog-box" class="butler-dialog-box">
           <div class="butler-bubble assistant">
-            Good day. I am IRIS Butler. How may I personalize your experience?
+            Good day. I am IRIS Butler. How may I assist your browsing today?
           </div>
         </div>
 
-        <div class="butler-chips-container">
-          <div class="butler-chips-label">Quick Voice Commands</div>
-          <div class="butler-chips">
-            <button type="button" class="butler-chip" data-cmd="Change the page to baby pink">🌸 Baby Pink</button>
-            <button type="button" class="butler-chip" data-cmd="Make this easier to read">📖 Focus Reading</button>
-            <button type="button" class="butler-chip" data-cmd="Increase the text size">🔍 Larger Text</button>
-            <button type="button" class="butler-chip" data-cmd="Turn on text to speech">🔊 Read Aloud</button>
-            <button type="button" class="butler-chip" data-cmd="Enable high contrast">🌓 High Contrast</button>
-            <button type="button" class="butler-chip" data-cmd="Make the page simpler">🧘 Simplify</button>
-            <button type="button" class="butler-chip" data-cmd="Apply my preferences">👤 My Profile</button>
-            <button type="button" class="butler-chip" data-cmd="Reset page">↺ Reset</button>
-          </div>
+        <div class="butler-chips">
+          <button type="button" class="butler-chip" data-cmd="Change the page to baby pink">🌸 Baby Pink</button>
+          <button type="button" class="butler-chip" data-cmd="Make this easier to read">📖 Reading Mode</button>
+          <button type="button" class="butler-chip" data-cmd="Increase the text size">🔍 Larger Text</button>
+          <button type="button" class="butler-chip" data-cmd="Turn on text to speech">🔊 Read Page</button>
+          <button type="button" class="butler-chip" data-cmd="Make the page simpler">🧘 Simplify</button>
+          <button type="button" class="butler-chip" data-cmd="Turn on high contrast">🌓 High Contrast</button>
+          <button type="button" class="butler-chip" data-cmd="Reset to default">↺ Reset</button>
         </div>
 
         <form id="butler-input-form" class="butler-input-row">
@@ -485,14 +219,14 @@ class ButlerVoice {
             id="butler-text-input"
             class="butler-text-input"
             type="text"
-            placeholder="Say or type command (e.g. 'baby pink')..."
-            aria-label="Butler command input"
+            placeholder="Ask Butler (e.g. 'baby pink')..."
+            aria-label="Butler text input"
           />
           <button type="submit" class="butler-send-btn">Send</button>
         </form>
       </div>
 
-      <button id="butler-fab" class="butler-fab" aria-label="Open IRIS Voice Butler" title="Speak to IRIS Butler">
+      <button id="butler-fab" class="butler-fab" aria-label="Open IRIS Butler" type="button">
         🎙️
       </button>
     `;
@@ -501,38 +235,50 @@ class ButlerVoice {
   }
 
   bindEvents() {
-    // Top / Inline button on features.html or any page
     const inlineBtn = document.getElementById("butler-btn");
-    if (inlineBtn) {
-      inlineBtn.addEventListener("click", () => {
+    const fab = document.getElementById("butler-fab");
+    const closeBtn = document.getElementById("butler-close-btn");
+    const form = document.getElementById("butler-input-form");
+    const panel = document.getElementById("butler-panel");
+
+    const toggle = (e) => {
+      e.stopPropagation();
+      if (panel && panel.classList.contains("open")) {
+        this.closePanel();
+      } else {
         this.openPanel();
         this.startListening();
-      });
-    }
+      }
+    };
 
-    // Floating FAB button
-    const fab = document.getElementById("butler-fab");
-    if (fab) {
-      fab.addEventListener("click", () => {
-        const panel = document.getElementById("butler-panel");
-        const isOpen = panel && panel.classList.contains("open");
-        if (isOpen && !this.isListening) {
-          this.startListening();
-        } else {
-          this.openPanel();
-          this.startListening();
-        }
-      });
-    }
+    if (inlineBtn) inlineBtn.addEventListener("click", toggle);
+    if (fab) fab.addEventListener("click", toggle);
 
-    // Close button
-    const closeBtn = document.getElementById("butler-close-btn");
     if (closeBtn) {
-      closeBtn.addEventListener("click", () => this.closePanel());
+      closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.closePanel();
+      });
     }
 
-    // Text form submission
-    const form = document.getElementById("butler-input-form");
+    if (panel) {
+      panel.addEventListener("click", (e) => e.stopPropagation());
+    }
+
+    document.addEventListener("click", (e) => {
+      if (panel && panel.classList.contains("open")) {
+        if (!panel.contains(e.target) && e.target !== inlineBtn && e.target !== fab) {
+          this.closePanel();
+        }
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.closePanel();
+      }
+    });
+
     if (form) {
       form.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -546,9 +292,9 @@ class ButlerVoice {
       });
     }
 
-    // Quick chips
     document.querySelectorAll(".butler-chip").forEach((chip) => {
-      chip.addEventListener("click", () => {
+      chip.addEventListener("click", (e) => {
+        e.stopPropagation();
         const cmd = chip.getAttribute("data-cmd");
         if (cmd) {
           this.addMessage(cmd, "user");
@@ -560,46 +306,34 @@ class ButlerVoice {
 
   openPanel() {
     const panel = document.getElementById("butler-panel");
-    if (panel) {
-      panel.classList.add("open");
-    }
+    if (panel) panel.classList.add("open");
   }
 
   closePanel() {
     const panel = document.getElementById("butler-panel");
-    if (panel) {
-      panel.classList.remove("open");
-    }
-    if (this.isListening && this.recognition) {
+    if (panel) panel.classList.remove("open");
+
+    if (this.recognition && this.isListening) {
       this.recognition.stop();
     }
-  }
+    if (this.synth) {
+      this.synth.cancel();
+    }
 
-  focusInput() {
-    const input = document.getElementById("butler-text-input");
-    if (input) input.focus();
+    this.setButtonsListening(false);
+    this.updateStatus("ready", "Ready");
   }
 
   updateStatus(statusKey, text) {
-    this.currentStatus = statusKey;
     const badge = document.getElementById("butler-status");
-    if (badge) {
-      badge.textContent = text;
-      badge.className = `butler-status-badge ${statusKey}`;
-    }
+    if (badge) badge.textContent = text;
   }
 
   setButtonsListening(listening) {
     const inlineBtn = document.getElementById("butler-btn");
     const fab = document.getElementById("butler-fab");
-
-    if (inlineBtn) {
-      inlineBtn.classList.toggle("listening", listening);
-      inlineBtn.textContent = listening ? "🛑 Listening..." : "🎙️ Ask Butler";
-    }
-    if (fab) {
-      fab.classList.toggle("listening", listening);
-    }
+    if (inlineBtn) inlineBtn.classList.toggle("listening", listening);
+    if (fab) fab.classList.toggle("listening", listening);
   }
 
   addMessage(text, sender) {
@@ -612,10 +346,13 @@ class ButlerVoice {
     box.appendChild(bubble);
     box.scrollTop = box.scrollHeight;
   }
+
+  loadSavedPreferences() {
+    const saved = localStorage.getItem("iris_theme");
+    if (saved) document.body.classList.add(saved);
+  }
 }
 
-// Global Butler instance
-let irisButler = null;
 window.addEventListener("DOMContentLoaded", () => {
-  irisButler = new ButlerVoice();
+  new ButlerVoice();
 });
